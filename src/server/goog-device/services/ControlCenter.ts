@@ -11,6 +11,7 @@ import { ControlCenterCommand } from '../../../common/ControlCenterCommand';
 import * as os from 'os';
 import * as crypto from 'crypto';
 import { DeviceState } from '../../../common/DeviceState';
+import { DeviceHistory } from './DeviceHistory';
 
 export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> implements Service {
     private static readonly defaultWaitAfterError = 1000;
@@ -25,6 +26,7 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
     private deviceMap: Map<string, Device> = new Map();
     private descriptors: Map<string, GoogDeviceDescriptor> = new Map();
     private readonly id: string;
+    private readonly history = DeviceHistory.getInstance();
 
     protected constructor() {
         super();
@@ -80,6 +82,13 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
 
     private onDeviceUpdate = (device: Device): void => {
         const { udid, descriptor } = device;
+        const wasOnline = this.descriptors.get(udid)?.state === DeviceState.DEVICE;
+        const isOnline = descriptor.state === DeviceState.DEVICE;
+        if (isOnline) {
+            this.history.record(descriptor, !wasOnline);
+        } else if (wasOnline) {
+            this.history.touch(udid);
+        }
         this.descriptors.set(udid, descriptor);
         this.emit('device', descriptor);
     };
@@ -228,6 +237,12 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
                 return this.adbDisconnect(command.getHost(), command.getPort());
             case ControlCenterCommand.ADB_KILL_SERVER:
                 return this.adbKillServer();
+            case ControlCenterCommand.DEVICE_SET_ALIAS:
+                this.history.setAlias(command.getUdid(), command.getAlias());
+                return;
+            case ControlCenterCommand.DEVICE_FORGET:
+                this.history.remove(command.getUdid());
+                return;
             default:
                 break;
         }

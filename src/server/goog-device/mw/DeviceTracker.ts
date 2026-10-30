@@ -9,11 +9,14 @@ import { DeviceTrackerEventList } from '../../../types/DeviceTrackerEventList';
 import { Multiplexer } from '../../../packages/multiplexer/Multiplexer';
 import { ChannelCode } from '../../../common/ChannelCode';
 import { ControlCenterResponse, ControlCenterResponseData } from '../../../types/ControlCenterResponse';
+import { DeviceHistoryEntry, DeviceHistoryEvent } from '../../../types/DeviceHistoryEntry';
+import { DeviceHistory } from '../services/DeviceHistory';
 
 export class DeviceTracker extends Mw {
     public static readonly TAG = 'DeviceTracker';
     public static readonly type = 'android';
     private adt: ControlCenter = ControlCenter.getInstance();
+    private history: DeviceHistory = DeviceHistory.getInstance();
     private readonly id: string;
 
     public static processChannel(ws: Multiplexer, code: string): Mw | undefined {
@@ -39,6 +42,8 @@ export class DeviceTracker extends Mw {
             .then(() => {
                 this.adt.on('device', this.sendDeviceMessage);
                 this.buildAndSendMessage(this.adt.getDevices());
+                this.history.on('change', this.sendHistoryMessage);
+                this.sendHistoryMessage(this.history.getList());
             })
             .catch((error: Error) => {
                 console.error(`[${DeviceTracker.TAG}] Error: ${error.message}`);
@@ -54,6 +59,15 @@ export class DeviceTracker extends Mw {
         this.sendMessage({
             id: -1,
             type: 'device',
+            data,
+        });
+    };
+
+    private sendHistoryMessage = (list: DeviceHistoryEntry[]): void => {
+        const data: DeviceHistoryEvent = { list };
+        this.sendMessage({
+            id: -1,
+            type: 'history',
             data,
         });
     };
@@ -115,5 +129,6 @@ export class DeviceTracker extends Mw {
     public release(): void {
         super.release();
         this.adt.off('device', this.sendDeviceMessage);
+        this.history.off('change', this.sendHistoryMessage);
     }
 }

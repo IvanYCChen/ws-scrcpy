@@ -3,8 +3,10 @@ import { Usb, Wifi } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import DeviceActions from '@/components/DeviceActions.vue';
+import DeviceMenu from '@/components/DeviceMenu.vue';
+import DeviceName from '@/components/DeviceName.vue';
 import DeviceStateBadge from '@/components/DeviceStateBadge.vue';
-import { androidLabel, deviceTitle, ipv4List } from '@/lib/device';
+import { androidLabel, ipv4List } from '@/lib/device';
 import { isTcpUdid } from '@/lib/ws';
 import type { GoogDeviceDescriptor } from '@/types/protocol';
 
@@ -26,9 +28,8 @@ defineProps<{ devices: GoogDeviceDescriptor[] }>();
             </TableHeader>
             <TableBody>
                 <TableRow v-for="device in devices" :key="device.udid">
-                    <TableCell>
-                        <div class="font-medium">{{ deviceTitle(device) }}</div>
-                        <div class="mt-0.5 font-mono text-xs text-muted-foreground">{{ device.udid }}</div>
+                    <TableCell class="max-w-72">
+                        <DeviceName :device="device" />
                     </TableCell>
                     <TableCell>
                         <Badge variant="secondary">
@@ -46,7 +47,10 @@ defineProps<{ devices: GoogDeviceDescriptor[] }>();
                     </TableCell>
                     <TableCell><DeviceStateBadge :state="device.state" /></TableCell>
                     <TableCell class="whitespace-nowrap text-right">
-                        <DeviceActions :device="device" class="flex-nowrap justify-end" />
+                        <div class="flex items-center justify-end gap-1">
+                            <DeviceActions :device="device" class="flex-nowrap! justify-end" />
+                            <DeviceMenu :device="device" />
+                        </div>
                     </TableCell>
                 </TableRow>
             </TableBody>

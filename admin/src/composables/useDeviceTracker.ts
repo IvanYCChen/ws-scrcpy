@@ -7,6 +7,8 @@ import {
     DeviceState,
     ServerMessageType,
     type ControlCenterResponseData,
+    type DeviceHistoryEntry,
+    type DeviceHistoryEvent,
     type DeviceTrackerEvent,
     type DeviceTrackerEventList,
     type GoogDeviceDescriptor,
@@ -43,6 +45,23 @@ function compareDevices(a: GoogDeviceDescriptor, b: GoogDeviceDescriptor): numbe
     return a.udid.localeCompare(b.udid);
 }
 
+/** Placeholder descriptor for a remembered device that the adb server does not currently know about. */
+function historyDescriptor(entry: DeviceHistoryEntry): GoogDeviceDescriptor {
+    return {
+        udid: entry.udid,
+        state: DeviceState.DISCONNECTED,
+        'ro.build.version.release': entry.release,
+        'ro.build.version.sdk': entry.sdk,
+        'ro.product.cpu.abi': '',
+        'ro.product.manufacturer': entry.manufacturer,
+        'ro.product.model': entry.model,
+        'wifi.interface': '',
+        interfaces: [],
+        pid: -1,
+        'last.update.timestamp': entry.lastSeen,
+    };
+}
+
 function useDeviceTrackerImpl() {
     const url = buildTrackerUrl();
     const status = ref<TrackerStatus>('connecting');
@@ -50,6 +69,7 @@ function useDeviceTrackerImpl() {
     const trackerName = ref('');
     const lastError = ref<string | null>(null);
     const devices = reactive(new Map<string, GoogDeviceDescriptor>());
+    const history = reactive(new Map<string, DeviceHistoryEntry>());
     const pending = new Map<number, PendingCommand>();
 
     let ws: WebSocket | null = null;
@@ -57,7 +77,16 @@ function useDeviceTrackerImpl() {
     let reconnectTimer: number | undefined;
     let disposed = false;
 
-    const deviceList = computed(() => Array.from(devices.values()).sort(compareDevices));
+    // Live devices plus remembered ones that are not connected, so they can be reconnected after a restart.
+    const deviceList = computed(() => {
+        const list = Array.from(devices.values());
+        for (const entry of history.values()) {
+            if (!devices.has(entry.udid)) {
+                list.push(historyDescriptor(entry));
+            }
+        }
+        return list.sort(compareDevices);
+    });
     const isOpen = computed(() => status.value === 'open');
 
     function clearReconnect(): void {
@@ -122,6 +151,14 @@ function useDeviceTrackerImpl() {
                 const event = message.data as DeviceTrackerEvent;
                 trackerName.value = event.name;
                 devices.set(event.device.udid, event.device);
+                break;
+            }
+            case ServerMessageType.HISTORY: {
+                const event = message.data as DeviceHistoryEvent;
+                history.clear();
+                for (const entry of event.list) {
+                    history.set(entry.udid, entry);
+                }
                 break;
             }
             default:
@@ -210,6 +247,14 @@ function useDeviceTrackerImpl() {
         return send(Command.ADB_KILL_SERVER, {});
     }
 
+    function setAlias(udid: string, alias: string): Promise<ControlCenterResponseData> {
+        return send(Command.DEVICE_SET_ALIAS, { udid, alias });
+    }
+
+    function forgetDevice(udid: string): Promise<ControlCenterResponseData> {
+        return send(Command.DEVICE_FORGET, { udid });
+    }
+
     function reconnectNow(): void {
         if (ws && ws.readyState === WebSocket.OPEN) {
             return;
@@ -257,11 +302,14 @@ function useDeviceTrackerImpl() {
         trackerName,
         lastError,
         devices,
+        history,
         deviceList,
         send,
         adbConnect,
         adbDisconnect,
         adbKillServer,
+        setAlias,
+        forgetDevice,
         reconnectNow,
     };
 }

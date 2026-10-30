@@ -7,11 +7,13 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { deviceTitle } from '@/lib/device';
 import { buildStreamLink } from '@/lib/ws';
 import { PLAYERS, type GoogDeviceDescriptor, type PlayerCode } from '@/types/protocol';
+import { useDeviceTracker } from '@/composables/useDeviceTracker';
 
 const props = defineProps<{ device: GoogDeviceDescriptor; player: PlayerCode }>();
 const open = defineModel<boolean>('open', { default: false });
 
-const title = computed(() => deviceTitle(props.device));
+const { history } = useDeviceTracker();
+const title = computed(() => history.get(props.device.udid)?.alias || deviceTitle(props.device));
 const playerName = computed(() => PLAYERS.find((p) => p.code === props.player)?.name ?? props.player);
 const streamLink = computed(() => buildStreamLink(props.device.udid, props.player));
 

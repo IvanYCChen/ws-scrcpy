@@ -10,6 +10,8 @@ export class ControlCenterCommand {
     public static ADB_CONNECT = 'adb_connect';
     public static ADB_DISCONNECT = 'adb_disconnect';
     public static ADB_KILL_SERVER = 'adb_kill_server';
+    public static DEVICE_SET_ALIAS = 'device_set_alias';
+    public static DEVICE_FORGET = 'device_forget';
 
     public static DEFAULT_ADB_PORT = 5555;
 
@@ -19,6 +21,7 @@ export class ControlCenterCommand {
     private udid = '';
     private host = '';
     private port = 0;
+    private alias = '';
     private method = '';
     private args?: any;
     private data?: any;
@@ -54,6 +57,20 @@ export class ControlCenterCommand {
             case this.ADB_DISCONNECT:
                 command.host = this.parseHost(data.host);
                 command.port = this.parsePort(data.port);
+                return command;
+            case this.DEVICE_SET_ALIAS:
+                if (!command.udid) {
+                    throw new Error('Invalid "udid" value');
+                }
+                if (typeof data.alias !== 'string') {
+                    throw new Error('Invalid "alias" value');
+                }
+                command.alias = data.alias;
+                return command;
+            case this.DEVICE_FORGET:
+                if (!command.udid) {
+                    throw new Error('Invalid "udid" value');
+                }
                 return command;
             case this.ADB_KILL_SERVER:
             case this.START_SERVER:
@@ -102,6 +119,9 @@ export class ControlCenterCommand {
     }
     public getPort(): number {
         return this.port;
+    }
+    public getAlias(): string {
+        return this.alias;
     }
     public getId(): number {
         return this.id;

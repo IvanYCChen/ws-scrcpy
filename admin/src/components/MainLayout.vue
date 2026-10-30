@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Plus, Smartphone } from '@lucide/vue';
+import { Plus } from '@lucide/vue';
+import logoUrl from '@/assets/logo.svg';
 import { Button } from '@/components/ui/button';
 import AdbServerMenu from '@/components/AdbServerMenu.vue';
 import ConnectDialog from '@/components/ConnectDialog.vue';
@@ -20,7 +21,7 @@ const connectOpen = ref(false);
             style="padding-top: env(safe-area-inset-top)"
         >
             <div class="mx-auto flex h-14 w-full max-w-6xl items-center gap-1.5 px-4 sm:gap-2">
-                <Smartphone class="size-5 shrink-0" aria-hidden="true" />
+                <img :src="logoUrl" alt="" class="size-7 shrink-0" />
                 <div class="min-w-0 flex-1">
                     <h1 class="truncate text-base font-semibold leading-tight">ws-scrcpy 後臺</h1>
                     <p v-if="trackerName" class="truncate text-xs text-muted-foreground">{{ trackerName }}</p>

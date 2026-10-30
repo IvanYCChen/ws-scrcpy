@@ -46,9 +46,26 @@ export interface DeviceTrackerEvent {
     device: GoogDeviceDescriptor;
 }
 
+/** A device that has been online at least once (`<WS_SCRCPY_DATA_DIR>/devices.json` on the server). */
+export interface DeviceHistoryEntry {
+    udid: string;
+    alias: string;
+    manufacturer: string;
+    model: string;
+    release: string;
+    sdk: string;
+    firstSeen: number;
+    lastSeen: number;
+}
+
+export interface DeviceHistoryEvent {
+    list: DeviceHistoryEntry[];
+}
+
 export const ServerMessageType = {
     DEVICE_LIST: 'devicelist',
     DEVICE: 'device',
+    HISTORY: 'history',
     RESPONSE: 'response',
 } as const;
 
@@ -56,6 +73,8 @@ export const Command = {
     ADB_CONNECT: 'adb_connect',
     ADB_DISCONNECT: 'adb_disconnect',
     ADB_KILL_SERVER: 'adb_kill_server',
+    DEVICE_SET_ALIAS: 'device_set_alias',
+    DEVICE_FORGET: 'device_forget',
 } as const;
 
 export type CommandType = (typeof Command)[keyof typeof Command];
