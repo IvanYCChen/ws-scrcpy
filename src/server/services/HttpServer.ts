@@ -8,6 +8,7 @@ import { Config } from '../Config';
 import { TypedEmitter } from '../../common/TypedEmitter';
 import * as process from 'process';
 import { EnvName } from '../EnvName';
+import { Auth } from './Auth';
 
 const DEFAULT_STATIC_DIR = path.join(__dirname, './public');
 
@@ -85,6 +86,9 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
             // The admin UI used to live at `<PATHNAME>admin/`; it is now served at PATHNAME itself.
             const adminPath = `${PATHNAME.replace(/\/$/, '')}/admin`;
             this.mainApp.get([adminPath, `${adminPath}/`], (_req, res) => res.redirect(301, PATHNAME));
+            const auth = Auth.getInstance();
+            this.mainApp.use(PATHNAME, auth.createRouter(PATHNAME));
+            this.mainApp.use(PATHNAME, auth.gate);
             this.mainApp.use(PATHNAME, express.static(HttpServer.PUBLIC_DIR));
 
             /// #if USE_WDA_MJPEG_SERVER

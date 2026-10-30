@@ -22,6 +22,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+# Persistent data (admin password hash); docker-compose mounts a named volume here.
+ENV WS_SCRCPY_DATA_DIR=/app/data
+RUN mkdir -p /app/data && chown node:node /app/data
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/package.json ./

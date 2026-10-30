@@ -3,6 +3,7 @@ import WS from 'ws';
 import { Service } from './Service';
 import { HttpServer, ServerAndPort } from './HttpServer';
 import { MwFactory } from '../mw/Mw';
+import { Auth } from './Auth';
 
 export class WebSocketServer implements Service {
     private static instance?: WebSocketServer;
@@ -35,6 +36,10 @@ export class WebSocketServer implements Service {
         wss.on('connection', async (ws: WS, request) => {
             if (!request.url) {
                 ws.close(4001, `[${TAG}] Invalid url`);
+                return;
+            }
+            if (!Auth.getInstance().verifyCookieHeader(request.headers.cookie)) {
+                ws.close(4401, 'Unauthorized');
                 return;
             }
             const url = new URL(request.url, 'https://example.org/');

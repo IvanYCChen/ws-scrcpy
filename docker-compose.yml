@@ -10,6 +10,12 @@ services:
     environment:
       # Base path the web UI is served under, e.g. "/" or "/scrcpy/". The admin UI is served at <base>.
       WS_SCRCPY_PATHNAME: ${WS_SCRCPY_PATHNAME:-/}
+    volumes:
+      # Admin password (auth.json). Delete that file to reset the password.
+      - ws-scrcpy-data:/app/data
     extra_hosts:
       # Lets `adb connect host.docker.internal:<port>` reach devices/emulators published on the docker host.
       - "host.docker.internal:host-gateway"
+
+volumes:
+  ws-scrcpy-data:

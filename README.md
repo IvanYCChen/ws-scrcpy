@@ -111,6 +111,13 @@ It replaces the classic device list and is served at the base path, `http://<hos
 * `adb connect <host>:<port>`, `adb disconnect` for wireless devices, `adb kill-server`
 * Streams open embedded in a dialog (the player page `stream.html` in an iframe), or in a new tab
 
+Access is password protected: on first visit the page asks you to set a password, which is stored as an
+scrypt hash in `<WS_SCRCPY_DATA_DIR>/auth.json` (default `./data`, `/app/data` on a docker volume in the image).
+After logging in the browser keeps a signed, HttpOnly session cookie for 30 days. Without it the server only
+serves the login page: every other file and every WebSocket connection is refused (close code `4401`).
+The password can be changed (logging out all other browsers) from the menu. To reset a forgotten password,
+delete `auth.json`, e.g. `docker compose exec ws-scrcpy rm /app/data/auth.json`.
+
 It talks to the server over the plain-JSON WebSocket `?action=goog-device-list`
 (commands `adb_connect`, `adb_disconnect`, `adb_kill_server`, each answered with a `response` message).
 

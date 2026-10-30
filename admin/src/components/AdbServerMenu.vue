@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { EllipsisVertical, RotateCcw } from '@lucide/vue';
+import { EllipsisVertical, KeyRound, LogOut, RotateCcw } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -16,14 +16,28 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import ChangePasswordDialog from '@/components/ChangePasswordDialog.vue';
+import { useAuth } from '@/composables/useAuth';
 import { useDeviceTracker } from '@/composables/useDeviceTracker';
 
 const { adbKillServer, isOpen } = useDeviceTracker();
 
+const { logout } = useAuth();
+
 const confirmOpen = ref(false);
+const passwordOpen = ref(false);
 const pending = ref(false);
+
+async function signOut(): Promise<void> {
+    try {
+        await logout();
+    } catch (error) {
+        toast.error('登出失敗', { description: (error as Error).message });
+    }
+}
 
 async function killServer(): Promise<void> {
     if (pending.value) {
@@ -55,6 +69,16 @@ async function killServer(): Promise<void> {
                 <RotateCcw />
                 重啟 adb server
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>帳號</DropdownMenuLabel>
+            <DropdownMenuItem @select="passwordOpen = true">
+                <KeyRound />
+                變更密碼
+            </DropdownMenuItem>
+            <DropdownMenuItem @select="signOut">
+                <LogOut />
+                登出
+            </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>
 
@@ -74,4 +98,6 @@ async function killServer(): Promise<void> {
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+    <ChangePasswordDialog v-model:open="passwordOpen" />
 </template>

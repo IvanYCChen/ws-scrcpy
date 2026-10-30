@@ -1,6 +1,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { createSharedComposable, tryOnScopeDispose, useDocumentVisibility } from '@vueuse/core';
 import { buildTrackerUrl } from '@/lib/ws';
+import { useAuth } from '@/composables/useAuth';
 import {
     Command,
     DeviceState,
@@ -157,7 +158,7 @@ function useDeviceTrackerImpl() {
                 lastError.value = '無法連線到 ws-scrcpy 伺服器';
             }
         };
-        socket.onclose = () => {
+        socket.onclose = (event) => {
             if (ws !== socket) {
                 return;
             }
@@ -165,6 +166,12 @@ function useDeviceTrackerImpl() {
             rejectAllPending(new Error('與伺服器的連線已中斷'));
             if (disposed) {
                 status.value = 'closed';
+                return;
+            }
+            // 4401: the session expired or the password was changed elsewhere; App.vue switches to the login screen.
+            if (event.code === 4401) {
+                status.value = 'closed';
+                void useAuth().refresh();
                 return;
             }
             scheduleReconnect();

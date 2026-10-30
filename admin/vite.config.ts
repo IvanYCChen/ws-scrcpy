@@ -26,6 +26,12 @@ export default defineConfig(({ mode }) => {
         server: {
             port: 5173,
             proxy: {
+                // Auth endpoints (same origin in dev too, so the session cookie is shared with the WebSocket).
+                '^/api/': {
+                    target: target.replace(/^ws/, 'http'),
+                    changeOrigin: true,
+                    secure: false,
+                },
                 // ws-scrcpy routes WebSocket upgrades by `?action=` only (path is ignored).
                 // Vite's own HMR socket has no query string, so it is not matched.
                 '^/\?action=': {
