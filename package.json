@@ -6,13 +6,15 @@
     "clean": "npx rimraf dist",
     "dist:dev": "webpack --config webpack/ws-scrcpy.dev.ts --stats-error-details",
     "dist:prod": "webpack --config webpack/ws-scrcpy.prod.ts --stats-error-details",
-    "dist": "npm run dist:prod",
+    "dist:admin": "cd admin && npm install --no-audit --no-fund && npm run build",
+    "dist": "npm run dist:prod && npm run dist:admin",
     "start": "npm run dist && cd dist && npm start",
     "script:dist:start": "node ./index.js",
     "postinstall": "node scripts/setup-appium.js",
     "lint": "eslint src/ --ext .ts",
     "format": "eslint src/ --fix --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint:admin": "cd admin && npm run typecheck"
   },
   "author": "Sergey Volkov <drauggres@gmail.com>",
   "license": "MIT",

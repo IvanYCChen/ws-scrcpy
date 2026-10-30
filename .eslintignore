@@ -4,3 +4,4 @@ vendor/**/*.ts
 src/app/Util.ts
 *.js
 typings/**/*.d.ts
+/admin
