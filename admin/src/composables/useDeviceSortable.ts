@@ -17,6 +17,7 @@ const CHOSEN_CLASS = 'device-sort-chosen';
 const GHOST_CLASS = 'device-sort-ghost';
 const DRAG_CLASS = 'device-sort-drag';
 const DRAGGING_BODY_CLASS = 'device-sorting';
+const DRAGGING_TOUCH_BODY_CLASS = 'device-sorting-touch';
 const LONG_PRESS_MS = 300;
 
 /**
@@ -31,12 +32,13 @@ export function useDeviceSortable(container: Ref<HTMLElement | null | undefined>
     function destroy(): void {
         sortable?.destroy();
         sortable = null;
-        document.body.classList.remove(DRAGGING_BODY_CLASS);
+        document.body.classList.remove(DRAGGING_BODY_CLASS, DRAGGING_TOUCH_BODY_CLASS);
     }
 
     function create(el: HTMLElement): void {
         const press = options.mode.value === 'press';
-        sortable = Sortable.create(el, {
+        // `supportPointer` is a real Sortable option that @types/sortablejs does not declare.
+        const sortableOptions: Sortable.Options & { supportPointer?: boolean } = {
             draggable: '[data-sortable]',
             handle: press ? undefined : '[data-drag-handle]',
             // Taps on buttons and links keep working, and never start a drag (the grip itself may).
@@ -45,7 +47,14 @@ export function useDeviceSortable(container: Ref<HTMLElement | null | undefined>
             delay: press ? LONG_PRESS_MS : 0,
             delayOnTouchOnly: true,
             touchStartThreshold: 5,
-            animation: 180,
+            // With pointer events, moving a lifted card makes Android Chrome start scrolling the page, which fires
+            // `pointercancel` and drops the card mid-drag. Touch events let Sortable cancel the scroll instead.
+            supportPointer: !press,
+            // Scroll the page when the card is dragged near the top/bottom edge.
+            scrollSensitivity: 80,
+            scrollSpeed: 14,
+            animation: 220,
+            easing: 'cubic-bezier(0.2, 0, 0, 1)',
             forceFallback: true,
             fallbackOnBody: true,
             fallbackTolerance: 3,
@@ -60,9 +69,15 @@ export function useDeviceSortable(container: Ref<HTMLElement | null | undefined>
             },
             onStart() {
                 document.body.classList.add(DRAGGING_BODY_CLASS);
+                if (press) {
+                    document.body.classList.add(DRAGGING_TOUCH_BODY_CLASS);
+                }
             },
             onEnd(event) {
-                document.body.classList.remove(DRAGGING_BODY_CLASS);
+                document.body.classList.remove(DRAGGING_BODY_CLASS, DRAGGING_TOUCH_BODY_CLASS);
+                if (press && event.oldIndex !== event.newIndex) {
+                    navigator.vibrate?.(10);
+                }
                 const { item, from, oldIndex, newIndex, newDraggableIndex } = event;
                 if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) {
                     return;
@@ -77,7 +92,8 @@ export function useDeviceSortable(container: Ref<HTMLElement | null | undefined>
                     });
                 }
             },
-        });
+        };
+        sortable = Sortable.create(el, sortableOptions);
     }
 
     watch(

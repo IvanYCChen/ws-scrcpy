@@ -25,6 +25,9 @@
     --ring: oklch(0.708 0 0);
     --success: oklch(0.627 0.194 149.214);
     --success-foreground: oklch(0.985 0 0);
+    /* Accent for drag-to-reorder: the neutral primary is too close to the text colour to read as "selected". */
+    --drag: oklch(0.6 0.2 258);
+    --drag-foreground: oklch(0.985 0 0);
     --radius: 0.625rem;
 }
 
@@ -50,6 +53,8 @@
     --ring: oklch(0.556 0 0);
     --success: oklch(0.723 0.219 149.579);
     --success-foreground: oklch(0.145 0 0);
+    --drag: oklch(0.7 0.16 258);
+    --drag-foreground: oklch(0.2 0.05 258);
 }
 
 @theme inline {
@@ -93,54 +98,128 @@
     }
 }
 
-/* Drag-to-reorder of the device list (useDeviceSortable). */
+/*
+ * Drag-to-reorder of the device list (useDeviceSortable). Sortable toggles single class names, so the states
+ * live here. It positions the floating copy with an inline `transform`, so lift effects use the independent
+ * `scale` / `rotate` properties, which compose with it instead of being overwritten.
+ */
 body.device-sorting,
 body.device-sorting * {
     cursor: grabbing !important;
     user-select: none;
 }
 
-/* Table row being dragged by its grip: it moves through the list itself, highlighted. */
+/* ── Table rows (mouse, by the grip): the row itself travels through the list. ── */
 tr.device-sort-ghost {
-    background-color: var(--accent);
-    box-shadow: inset 3px 0 0 var(--primary);
+    background-color: color-mix(in oklab, var(--drag) 10%, transparent);
+    box-shadow: inset 3px 0 0 var(--drag);
 }
-
-/* Long-press on a card: it "lifts" before the drag starts. */
-.device-sort-chosen:not(tr) {
-    transform: scale(1.03);
-    box-shadow:
-        0 12px 28px -6px rgb(0 0 0 / 0.25),
-        0 0 0 2px var(--ring);
-    transition:
-        transform 150ms ease-out,
-        box-shadow 150ms ease-out;
+tr.device-sort-ghost [data-drag-handle] {
+    color: var(--drag);
 }
-
-/* Where the card will land. */
-.device-sort-ghost:not(tr) {
-    opacity: 0.35;
-    transform: none;
-    box-shadow: none;
-    outline: 2px dashed var(--ring);
-    outline-offset: -2px;
-}
-
-/* The copy that follows the finger. */
-.device-sort-drag:not(tr) {
-    opacity: 0.95 !important;
-    box-shadow:
-        0 20px 40px -8px rgb(0 0 0 / 0.35),
-        0 0 0 2px var(--ring);
-}
-
-/* Rows never get a floating copy: the row itself is the preview. */
+/* Rows never get a floating copy: the row is the preview. */
 tr.device-sort-drag {
     display: none !important;
 }
 
-/* Cards on touch screens: no text selection / callout while long-pressing. */
+/* ── Cards ── */
 .device-card-touch {
     -webkit-touch-callout: none;
     user-select: none;
+    transition:
+        scale 300ms ease-out,
+        box-shadow 200ms ease-out;
+}
+/* 1. Holding: the card sinks a little while the long-press timer runs, so the hold visibly "registers". */
+.device-card-touch:active:not(.device-sort-chosen) {
+    scale: 0.97;
+}
+
+/* 2. Picked up: it pops above the list with a coloured outline. */
+.device-sort-chosen:not(tr) {
+    scale: 1.03;
+    box-shadow:
+        0 0 0 2px var(--drag),
+        0 18px 36px -12px rgb(0 0 0 / 0.35);
+    transition:
+        scale 220ms cubic-bezier(0.3, 1.6, 0.5, 1),
+        box-shadow 220ms ease-out;
+}
+
+/* 3. The empty slot it will drop into: same size, content hidden, labelled. */
+.device-sort-ghost:not(tr) {
+    position: relative;
+    scale: 1;
+    box-shadow: none;
+    background-color: color-mix(in oklab, var(--drag) 7%, var(--background));
+    border: 2px dashed color-mix(in oklab, var(--drag) 55%, transparent);
+}
+.device-sort-ghost:not(tr) > * {
+    visibility: hidden;
+}
+.device-sort-ghost:not(tr)::after {
+    content: '放在這裡';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--drag);
+}
+
+/* 4. The copy under the finger: tilted, lifted, fully opaque. */
+.device-sort-drag:not(tr) {
+    opacity: 1 !important;
+    scale: 1.04;
+    rotate: 1.5deg;
+    box-shadow:
+        0 0 0 2px var(--drag),
+        0 28px 50px -12px rgb(0 0 0 / 0.45);
+    transition: none;
+}
+.device-sort-drag [data-drag-handle] {
+    color: var(--drag);
+}
+
+/* The other cards step back a little so the moving one stands out. */
+body.device-sorting-touch [data-sortable]:not(.device-sort-ghost):not(.device-sort-drag) {
+    opacity: 0.7;
+    transition: opacity 200ms ease-out;
+}
+
+/* Hint at the top of the screen while a card is being dragged. */
+body.device-sorting-touch::before {
+    content: '拖曳到想要的位置後放開';
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 0.75rem);
+    left: 50%;
+    translate: -50% 0;
+    z-index: 100001;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background: var(--drag);
+    color: var(--drag-foreground);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    box-shadow: 0 8px 24px -6px rgb(0 0 0 / 0.35);
+    pointer-events: none;
+    animation: device-sort-hint 180ms ease-out;
+}
+@keyframes device-sort-hint {
+    from {
+        opacity: 0;
+        translate: -50% -0.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .device-card-touch,
+    .device-sort-chosen:not(tr) {
+        transition: none;
+    }
+    .device-sort-drag:not(tr) {
+        rotate: none;
+    }
 }
