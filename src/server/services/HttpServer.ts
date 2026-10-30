@@ -11,7 +11,12 @@ import { EnvName } from '../EnvName';
 
 const DEFAULT_STATIC_DIR = path.join(__dirname, './public');
 
-const PATHNAME = process.env[EnvName.WS_SCRCPY_PATHNAME] || __PATHNAME__;
+function normalizePathname(value: string | undefined): string {
+    const pathname = (value || '').trim() || '/';
+    return pathname.startsWith('/') ? pathname : `/${pathname}`;
+}
+
+const PATHNAME = normalizePathname(process.env[EnvName.WS_SCRCPY_PATHNAME] || __PATHNAME__);
 
 export type ServerAndPort = {
     server: https.Server | http.Server;

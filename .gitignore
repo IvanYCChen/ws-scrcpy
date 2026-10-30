@@ -5,3 +5,4 @@
 /.appium-home
 /logs/
 /admin/node_modules
+/.env

@@ -1,0 +1,15 @@
+# Copy .env.example to .env to change the base path or the host port.
+services:
+  ws-scrcpy:
+    build: .
+    image: ws-scrcpy-slim:latest
+    container_name: ws-scrcpy
+    restart: unless-stopped
+    ports:
+      - "${WS_SCRCPY_PORT:-8000}:8000"
+    environment:
+      # Base path the web UI is served under, e.g. "/" or "/scrcpy/". Admin UI lives at <base>admin/.
+      WS_SCRCPY_PATHNAME: ${WS_SCRCPY_PATHNAME:-/}
+    extra_hosts:
+      # Lets `adb connect host.docker.internal:<port>` reach devices/emulators published on the docker host.
+      - "host.docker.internal:host-gateway"

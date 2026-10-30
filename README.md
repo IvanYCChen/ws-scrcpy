@@ -121,6 +121,14 @@ cd admin && npm install && npm run dev  # terminal 2: Vite dev server on :5173, 
 Set `VITE_WS_PROXY_TARGET=wss://localhost:8443` in `admin/.env.local` when the server runs over HTTPS.
 `npm run dist` builds the admin app into `dist/public/admin/` together with the rest.
 
+#### Docker
+```shell
+cp .env.example .env      # optional: WS_SCRCPY_PATHNAME (base path, e.g. /scrcpy/) and WS_SCRCPY_PORT
+docker compose up -d --build
+```
+The container runs its own `adb` server; devices or emulators published on the docker host can be
+connected from the admin UI as `host.docker.internal:<port>`.
+
 ### iOS
 
 ***Experimental Feature***: *is not built by default*
