@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { useLocalStorage } from '@vueuse/core';
-import { ChevronDown, ExternalLink, Plug, Unplug } from '@lucide/vue';
+import { ChevronDown, ExternalLink, MonitorPlay, Plug, Unplug } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -12,6 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import StreamDialog from '@/components/StreamDialog.vue';
 import { buildStreamLink, isPlayerCode, splitTcpUdid } from '@/lib/ws';
 import { DeviceState, PLAYERS, type GoogDeviceDescriptor, type PlayerCode } from '@/types/protocol';
 import { useDeviceTracker } from '@/composables/useDeviceTracker';
@@ -27,13 +28,17 @@ const tcp = computed(() => splitTcpUdid(props.device.udid));
 const canStream = computed(() => props.device.state === DeviceState.DEVICE);
 const canDisconnect = computed(() => tcp.value !== null && props.device.state !== DeviceState.DISCONNECTED);
 const canReconnect = computed(() => tcp.value !== null && props.device.state === DeviceState.DISCONNECTED);
-const streamLink = computed(() => buildStreamLink(props.device.udid, player.value));
 
 const busy = ref(false);
+const streamOpen = ref(false);
 
 function openStreamWith(code: PlayerCode): void {
     storedPlayer.value = code;
-    window.open(buildStreamLink(props.device.udid, code), '_blank', 'noopener,noreferrer');
+    streamOpen.value = true;
+}
+
+function openStreamInTab(): void {
+    window.open(buildStreamLink(props.device.udid, player.value), '_blank', 'noopener,noreferrer');
 }
 
 async function disconnect(): Promise<void> {
@@ -73,16 +78,8 @@ async function reconnect(): Promise<void> {
     <div class="flex flex-wrap items-center gap-2">
         <template v-if="canStream">
             <div class="flex items-center">
-                <Button
-                    as="a"
-                    :href="streamLink"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="sm"
-                    variant="outline"
-                    class="rounded-r-none"
-                >
-                    <ExternalLink />
+                <Button size="sm" variant="outline" class="rounded-r-none" @click="streamOpen = true">
+                    <MonitorPlay />
                     開啟串流
                 </Button>
                 <DropdownMenu>
@@ -98,9 +95,15 @@ async function reconnect(): Promise<void> {
                             {{ item.name }}
                             <span v-if="item.code === player" class="ml-auto pl-3 text-xs text-muted-foreground">預設</span>
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem @select="openStreamInTab">
+                            <ExternalLink />
+                            在新分頁開啟
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+            <StreamDialog v-model:open="streamOpen" :device="device" :player="player" />
         </template>
 
         <Button v-if="canReconnect" size="sm" variant="secondary" :disabled="!isOpen || busy" @click="reconnect">
