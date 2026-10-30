@@ -14,6 +14,7 @@ import { DeviceState } from '../../../common/DeviceState';
 
 export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> implements Service {
     private static readonly defaultWaitAfterError = 1000;
+    private static readonly adbCommandTimeout = 15000;
     private static instance?: ControlCenter;
 
     private initialized = false;
@@ -48,6 +49,7 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
         }
         console.log(`Device tracker is down. Will try to restart in ${this.waitAfterError}ms`);
         this.restartTimeoutId = setTimeout(() => {
+            this.restartTimeoutId = undefined;
             this.stopTracker();
             this.waitAfterError *= 1.2;
             this.init();
@@ -155,14 +157,85 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
         this.stopTracker();
     }
 
-    public async runCommand(command: ControlCenterCommand): Promise<void> {
+    private static withTimeout<T>(promise: PromiseLike<T>, ms: number, what: string): Promise<T> {
+        let timer: Timeout | undefined;
+        const timeout = new Promise<T>((_, reject) => {
+            timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms}ms`)), ms);
+        });
+        const clear = (): void => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+        return Promise.race([Promise.resolve(promise), timeout]).then(
+            (value) => {
+                clear();
+                return value;
+            },
+            (error) => {
+                clear();
+                throw error;
+            },
+        );
+    }
+
+    private async adbConnect(host: string, port: number): Promise<string> {
+        await ControlCenter.withTimeout(
+            this.client.connect(host, port),
+            ControlCenter.adbCommandTimeout,
+            `adb connect ${host}:${port}`,
+        );
+        return `connected to ${host}:${port}`;
+    }
+
+    private async adbDisconnect(host: string, port: number): Promise<string> {
+        try {
+            await ControlCenter.withTimeout(
+                this.client.disconnect(host, port),
+                ControlCenter.adbCommandTimeout,
+                `adb disconnect ${host}:${port}`,
+            );
+        } catch (error: any) {
+            // adbkit expects an empty reply, but adb >= 1.0.40 answers "disconnected <host>:<port>",
+            // which adbkit turns into an error even though the command succeeded.
+            if (!/^disconnected\b/i.test(String(error?.message || ''))) {
+                throw error;
+            }
+        }
+        return `disconnected ${host}:${port}`;
+    }
+
+    private async adbKillServer(): Promise<string> {
+        await ControlCenter.withTimeout(this.client.kill(), ControlCenter.adbCommandTimeout, 'adb kill-server');
+        this.stopTracker();
+        // The adb server is gone, so every device is unreachable until the tracker reconnects.
+        this.deviceMap.forEach((device) => {
+            if (device.descriptor.state !== DeviceState.DISCONNECTED) {
+                device.setState(DeviceState.DISCONNECTED);
+            }
+        });
+        this.waitAfterError = ControlCenter.defaultWaitAfterError;
+        this.restartTracker();
+        return 'adb server killed, restarting device tracker';
+    }
+
+    public async runCommand(command: ControlCenterCommand): Promise<string | void> {
+        const type = command.getType();
+        switch (type) {
+            case ControlCenterCommand.ADB_CONNECT:
+                return this.adbConnect(command.getHost(), command.getPort());
+            case ControlCenterCommand.ADB_DISCONNECT:
+                return this.adbDisconnect(command.getHost(), command.getPort());
+            case ControlCenterCommand.ADB_KILL_SERVER:
+                return this.adbKillServer();
+            default:
+                break;
+        }
         const udid = command.getUdid();
         const device = this.getDevice(udid);
         if (!device) {
-            console.error(`Device with udid:"${udid}" not found`);
-            return;
+            throw new Error(`Device with udid:"${udid}" not found`);
         }
-        const type = command.getType();
         switch (type) {
             case ControlCenterCommand.KILL_SERVER:
                 await device.killServer(command.getPid());

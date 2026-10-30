@@ -8,6 +8,7 @@ import { DeviceTrackerEvent } from '../../../types/DeviceTrackerEvent';
 import { DeviceTrackerEventList } from '../../../types/DeviceTrackerEventList';
 import { Multiplexer } from '../../../packages/multiplexer/Multiplexer';
 import { ChannelCode } from '../../../common/ChannelCode';
+import { ControlCenterResponse, ControlCenterResponseData } from '../../../types/ControlCenterResponse';
 
 export class DeviceTracker extends Mw {
     public static readonly TAG = 'DeviceTracker';
@@ -70,17 +71,45 @@ export class DeviceTracker extends Mw {
         });
     };
 
+    private sendResponse(id: number, data: ControlCenterResponseData): void {
+        const message: ControlCenterResponse = { id, type: 'response', data };
+        this.sendMessage(message);
+    }
+
     protected onSocketMessage(event: WS.MessageEvent): void {
+        const raw = event.data.toString();
         let command: ControlCenterCommand;
         try {
-            command = ControlCenterCommand.fromJSON(event.data.toString());
+            command = ControlCenterCommand.fromJSON(raw);
         } catch (error: any) {
-            console.error(`[${DeviceTracker.TAG}], Received message: ${event.data}. Error: ${error?.message}`);
+            console.error(`[${DeviceTracker.TAG}], Received message: ${raw}. Error: ${error?.message}`);
+            const { id, type } = DeviceTracker.peekIdAndType(raw);
+            this.sendResponse(id, { command: type, success: false, message: error?.message || 'Invalid command' });
             return;
         }
-        this.adt.runCommand(command).catch((e) => {
-            console.error(`[${DeviceTracker.TAG}], Received message: ${event.data}. Error: ${e.message}`);
-        });
+        const id = command.getId();
+        const type = command.getType();
+        this.adt
+            .runCommand(command)
+            .then((result) => {
+                this.sendResponse(id, { command: type, success: true, message: result || undefined });
+            })
+            .catch((e) => {
+                console.error(`[${DeviceTracker.TAG}], Received message: ${raw}. Error: ${e.message}`);
+                this.sendResponse(id, { command: type, success: false, message: e.message });
+            });
+    }
+
+    private static peekIdAndType(raw: string): { id: number; type: string } {
+        try {
+            const body = JSON.parse(raw);
+            return {
+                id: body && typeof body.id === 'number' ? body.id : -1,
+                type: body && typeof body.type === 'string' ? body.type : '',
+            };
+        } catch {
+            return { id: -1, type: '' };
+        }
     }
 
     public release(): void {
