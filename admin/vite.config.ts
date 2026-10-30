@@ -16,8 +16,11 @@ export default defineConfig(({ mode }) => {
             },
         },
         build: {
-            outDir: '../dist/public/admin',
-            emptyOutDir: true,
+            // Served at the base path; shares dist/public with the webpack player (stream.html, bundle.js…),
+            // so the folder must not be emptied and the assets go in their own subfolder.
+            outDir: '../dist/public',
+            emptyOutDir: false,
+            assetsDir: 'admin-assets',
             sourcemap: false,
         },
         server: {

@@ -82,6 +82,9 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
     public async start(): Promise<void> {
         this.mainApp = express();
         if (HttpServer.SERVE_STATIC && HttpServer.PUBLIC_DIR) {
+            // The admin UI used to live at `<PATHNAME>admin/`; it is now served at PATHNAME itself.
+            const adminPath = `${PATHNAME.replace(/\/$/, '')}/admin`;
+            this.mainApp.get([adminPath, `${adminPath}/`], (_req, res) => res.redirect(301, PATHNAME));
             this.mainApp.use(PATHNAME, express.static(HttpServer.PUBLIC_DIR));
 
             /// #if USE_WDA_MJPEG_SERVER

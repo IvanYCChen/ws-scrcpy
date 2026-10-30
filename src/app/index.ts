@@ -1,7 +1,5 @@
 import '../style/app.css';
 import { StreamClientScrcpy } from './googDevice/client/StreamClientScrcpy';
-import { HostTracker } from './client/HostTracker';
-import { Tool } from './client/Tool';
 
 window.onload = async function (): Promise<void> {
     const hash = location.hash.replace(/^#!/, '');
@@ -73,15 +71,12 @@ window.onload = async function (): Promise<void> {
     }
     /// #endif
 
-    const tools: Tool[] = [];
-
     /// #if INCLUDE_ADB_SHELL
     const { ShellClient } = await import('./googDevice/client/ShellClient');
     if (action === ShellClient.ACTION && typeof parsedQuery.get('udid') === 'string') {
         ShellClient.start(ShellClient.parseParameters(parsedQuery));
         return;
     }
-    tools.push(ShellClient);
     /// #endif
 
     /// #if INCLUDE_DEV_TOOLS
@@ -90,7 +85,6 @@ window.onload = async function (): Promise<void> {
         DevtoolsClient.start(DevtoolsClient.parseParameters(parsedQuery));
         return;
     }
-    tools.push(DevtoolsClient);
     /// #endif
 
     /// #if INCLUDE_FILE_LISTING
@@ -99,14 +93,8 @@ window.onload = async function (): Promise<void> {
         FileListingClient.start(FileListingClient.parseParameters(parsedQuery));
         return;
     }
-    tools.push(FileListingClient);
     /// #endif
 
-    if (tools.length) {
-        const { DeviceTracker } = await import('./googDevice/client/DeviceTracker');
-        tools.forEach((tool) => {
-            DeviceTracker.registerTool(tool);
-        });
-    }
-    HostTracker.start();
+    // The classic device list is gone: this page only hosts the tools above, the admin UI lives at the base path.
+    location.replace('./');
 };

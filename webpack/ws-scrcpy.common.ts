@@ -100,6 +100,8 @@ const front: webpack.Configuration = {
     plugins: [
         new HtmlWebpackPlugin({
             template: path.join(PROJECT_ROOT, '/src/public/index.html'),
+            // The base path serves the admin UI (dist/public/index.html); this page only hosts the player.
+            filename: 'stream.html',
             inject: 'head',
         }),
         new MiniCssExtractPlugin(),

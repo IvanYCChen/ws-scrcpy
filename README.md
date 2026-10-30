@@ -103,12 +103,13 @@ Control your device from `adb shell` in your browser.
 * Upload files by drag & drop
 * Download files
 
-#### Admin UI (`/admin/`)
-A responsive (mobile friendly) admin page built with Vue 3, shadcn-vue and Tailwind CSS,
-served by the same server at `http://<host>:8000/admin/`:
+#### Admin UI
+A responsive (mobile friendly) admin page built with Vue 3, shadcn-vue and Tailwind CSS.
+It replaces the classic device list and is served at the base path, `http://<host>:8000/`
+(old `/admin/` links redirect there):
 * Live device list (model, Android version, IPs, state, USB / wireless)
 * `adb connect <host>:<port>`, `adb disconnect` for wireless devices, `adb kill-server`
-* "Open stream" shortcut to the regular player page
+* Streams open embedded in a dialog (the player page `stream.html` in an iframe), or in a new tab
 
 It talks to the server over the plain-JSON WebSocket `?action=goog-device-list`
 (commands `adb_connect`, `adb_disconnect`, `adb_kill_server`, each answered with a `response` message).
@@ -119,7 +120,7 @@ npm start                               # terminal 1: build + run ws-scrcpy on :
 cd admin && npm install && npm run dev  # terminal 2: Vite dev server on :5173, WebSocket proxied to :8000
 ```
 Set `VITE_WS_PROXY_TARGET=wss://localhost:8443` in `admin/.env.local` when the server runs over HTTPS.
-`npm run dist` builds the admin app into `dist/public/admin/` together with the rest.
+`npm run dist` builds the admin app into `dist/public/` (assets in `admin-assets/`) next to the player page.
 
 #### Docker
 ```shell

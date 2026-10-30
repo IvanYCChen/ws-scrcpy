@@ -13,7 +13,7 @@ export function buildTrackerUrl(): string {
     return url.toString();
 }
 
-/** Base URL of the main ws-scrcpy UI (the admin lives one level below it at `<PATHNAME>admin/`). */
+/** Base URL of the ws-scrcpy server (`<PATHNAME>`), where the admin UI itself is served. */
 export function appBaseUrl(): URL {
     if (import.meta.env.VITE_APP_BASE) {
         return new URL(import.meta.env.VITE_APP_BASE, location.href);
@@ -21,7 +21,7 @@ export function appBaseUrl(): URL {
     if (import.meta.env.DEV) {
         return new URL('http://localhost:8000/');
     }
-    return new URL('../', location.href);
+    return new URL('./', location.href);
 }
 
 const TCP_UDID = /^(\d{1,3}(?:\.\d{1,3}){3}|\[[0-9a-f:]+\]|[a-z0-9-]+(?:\.[a-z0-9-]+)+):(\d{1,5})$/i;
@@ -44,8 +44,8 @@ export function isPlayerCode(value: string): value is PlayerCode {
 }
 
 /**
- * Link to the existing player page, in the same format as `BaseDeviceTracker.buildLink`:
- * `<base>#!action=stream&udid=…&player=…&ws=<ws url via proxy-adb>&fitToScreen=true`
+ * Link to the player page, in the same format as `BaseDeviceTracker.buildLink`:
+ * `<base>stream.html#!action=stream&udid=…&player=…&ws=<ws url via proxy-adb>&fitToScreen=true`
  */
 export function buildStreamLink(udid: string, player: PlayerCode = 'mse'): string {
     const base = appBaseUrl();
@@ -63,5 +63,5 @@ export function buildStreamLink(udid: string, player: PlayerCode = 'mse'): strin
         ws: ws.toString(),
         fitToScreen: 'true',
     });
-    return `${base.toString()}#!${query.toString()}`;
+    return `${new URL('stream.html', base).toString()}#!${query.toString()}`;
 }

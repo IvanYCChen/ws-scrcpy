@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-import { EllipsisVertical, ExternalLink, RotateCcw } from '@lucide/vue';
+import { EllipsisVertical, RotateCcw } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -16,17 +16,14 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { appBaseUrl } from '@/lib/ws';
 import { useDeviceTracker } from '@/composables/useDeviceTracker';
 
 const { adbKillServer, isOpen } = useDeviceTracker();
 
 const confirmOpen = ref(false);
 const pending = ref(false);
-const mainUiUrl = appBaseUrl().toString();
 
 async function killServer(): Promise<void> {
     if (pending.value) {
@@ -57,11 +54,6 @@ async function killServer(): Promise<void> {
             <DropdownMenuItem :disabled="!isOpen" @select="confirmOpen = true">
                 <RotateCcw />
                 重啟 adb server
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem as="a" :href="mainUiUrl" target="_blank" rel="noopener noreferrer">
-                <ExternalLink />
-                開啟原始介面
             </DropdownMenuItem>
         </DropdownMenuContent>
     </DropdownMenu>

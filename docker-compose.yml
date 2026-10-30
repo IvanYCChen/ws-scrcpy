@@ -8,7 +8,7 @@ services:
     ports:
       - "${WS_SCRCPY_PORT:-8000}:8000"
     environment:
-      # Base path the web UI is served under, e.g. "/" or "/scrcpy/". Admin UI lives at <base>admin/.
+      # Base path the web UI is served under, e.g. "/" or "/scrcpy/". The admin UI is served at <base>.
       WS_SCRCPY_PATHNAME: ${WS_SCRCPY_PATHNAME:-/}
     extra_hosts:
       # Lets `adb connect host.docker.internal:<port>` reach devices/emulators published on the docker host.
