@@ -92,3 +92,55 @@
         min-height: 100dvh;
     }
 }
+
+/* Drag-to-reorder of the device list (useDeviceSortable). */
+body.device-sorting,
+body.device-sorting * {
+    cursor: grabbing !important;
+    user-select: none;
+}
+
+/* Table row being dragged by its grip: it moves through the list itself, highlighted. */
+tr.device-sort-ghost {
+    background-color: var(--accent);
+    box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* Long-press on a card: it "lifts" before the drag starts. */
+.device-sort-chosen:not(tr) {
+    transform: scale(1.03);
+    box-shadow:
+        0 12px 28px -6px rgb(0 0 0 / 0.25),
+        0 0 0 2px var(--ring);
+    transition:
+        transform 150ms ease-out,
+        box-shadow 150ms ease-out;
+}
+
+/* Where the card will land. */
+.device-sort-ghost:not(tr) {
+    opacity: 0.35;
+    transform: none;
+    box-shadow: none;
+    outline: 2px dashed var(--ring);
+    outline-offset: -2px;
+}
+
+/* The copy that follows the finger. */
+.device-sort-drag:not(tr) {
+    opacity: 0.95 !important;
+    box-shadow:
+        0 20px 40px -8px rgb(0 0 0 / 0.35),
+        0 0 0 2px var(--ring);
+}
+
+/* Rows never get a floating copy: the row itself is the preview. */
+tr.device-sort-drag {
+    display: none !important;
+}
+
+/* Cards on touch screens: no text selection / callout while long-pressing. */
+.device-card-touch {
+    -webkit-touch-callout: none;
+    user-select: none;
+}

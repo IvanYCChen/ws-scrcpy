@@ -12,6 +12,7 @@ export class ControlCenterCommand {
     public static ADB_KILL_SERVER = 'adb_kill_server';
     public static DEVICE_SET_ALIAS = 'device_set_alias';
     public static DEVICE_FORGET = 'device_forget';
+    public static DEVICE_REORDER = 'device_reorder';
 
     public static DEFAULT_ADB_PORT = 5555;
 
@@ -22,6 +23,7 @@ export class ControlCenterCommand {
     private host = '';
     private port = 0;
     private alias = '';
+    private udids: string[] = [];
     private method = '';
     private args?: any;
     private data?: any;
@@ -71,6 +73,12 @@ export class ControlCenterCommand {
                 if (!command.udid) {
                     throw new Error('Invalid "udid" value');
                 }
+                return command;
+            case this.DEVICE_REORDER:
+                if (!Array.isArray(data.udids) || !data.udids.every((item: unknown) => typeof item === 'string')) {
+                    throw new Error('Invalid "udids" value');
+                }
+                command.udids = data.udids;
                 return command;
             case this.ADB_KILL_SERVER:
             case this.START_SERVER:
@@ -122,6 +130,9 @@ export class ControlCenterCommand {
     }
     public getAlias(): string {
         return this.alias;
+    }
+    public getUdids(): string[] {
+        return this.udids;
     }
     public getId(): number {
         return this.id;

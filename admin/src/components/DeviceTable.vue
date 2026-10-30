@@ -1,23 +1,33 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import { Usb, Wifi } from '@lucide/vue';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import DeviceActions from '@/components/DeviceActions.vue';
 import DeviceMenu from '@/components/DeviceMenu.vue';
 import DeviceName from '@/components/DeviceName.vue';
+import DragHandle from '@/components/DragHandle.vue';
 import DeviceStateBadge from '@/components/DeviceStateBadge.vue';
 import { androidLabel, ipv4List } from '@/lib/device';
 import { isTcpUdid } from '@/lib/ws';
 import type { GoogDeviceDescriptor } from '@/types/protocol';
+import { useDeviceSortable } from '@/composables/useDeviceSortable';
+import { useDeviceTracker } from '@/composables/useDeviceTracker';
 
 defineProps<{ devices: GoogDeviceDescriptor[] }>();
+
+const { history, isOpen } = useDeviceTracker();
+const root = ref<HTMLElement | null>(null);
+const body = computed(() => root.value?.querySelector('tbody') ?? null);
+useDeviceSortable(body, { mode: ref('handle'), disabled: computed(() => !isOpen.value) });
 </script>
 
 <template>
-    <div class="overflow-hidden rounded-xl border">
+    <div ref="root" class="overflow-hidden rounded-xl border">
         <Table>
             <TableHeader>
                 <TableRow>
+                    <TableHead class="w-10"><span class="sr-only">排序</span></TableHead>
                     <TableHead>裝置</TableHead>
                     <TableHead class="w-24">連線</TableHead>
                     <TableHead>Android</TableHead>
@@ -27,7 +37,15 @@ defineProps<{ devices: GoogDeviceDescriptor[] }>();
                 </TableRow>
             </TableHeader>
             <TableBody>
-                <TableRow v-for="device in devices" :key="device.udid">
+                <TableRow
+                    v-for="device in devices"
+                    :key="device.udid"
+                    :data-udid="device.udid"
+                    :data-sortable="history.has(device.udid) ? '' : undefined"
+                >
+                    <TableCell class="w-10 pr-0">
+                        <DragHandle :udid="device.udid" />
+                    </TableCell>
                     <TableCell class="max-w-72">
                         <DeviceName :device="device" />
                     </TableCell>

@@ -77,15 +77,12 @@ function useDeviceTrackerImpl() {
     let reconnectTimer: number | undefined;
     let disposed = false;
 
-    // Live devices plus remembered ones that are not connected, so they can be reconnected after a restart.
+    // Remembered devices first, in the order saved on the server (live descriptor when connected, so they can
+    // also be reconnected after a restart), then live devices that are not in the history.
     const deviceList = computed(() => {
-        const list = Array.from(devices.values());
-        for (const entry of history.values()) {
-            if (!devices.has(entry.udid)) {
-                list.push(historyDescriptor(entry));
-            }
-        }
-        return list.sort(compareDevices);
+        const list = Array.from(history.values(), (entry) => devices.get(entry.udid) ?? historyDescriptor(entry));
+        const rest = Array.from(devices.values()).filter((device) => !history.has(device.udid));
+        return list.concat(rest.sort(compareDevices));
     });
     const isOpen = computed(() => status.value === 'open');
 
@@ -255,6 +252,25 @@ function useDeviceTrackerImpl() {
         return send(Command.DEVICE_FORGET, { udid });
     }
 
+    /** Moves a remembered device to position `toIndex` of the saved order. */
+    function reorderDevice(udid: string, toIndex: number): Promise<ControlCenterResponseData> {
+        const order = Array.from(history.keys());
+        const from = order.indexOf(udid);
+        if (from === -1 || toIndex < 0 || toIndex >= order.length) {
+            return Promise.reject(new Error('無法移動'));
+        }
+        order.splice(from, 1);
+        order.splice(toIndex, 0, udid);
+        const promise = send(Command.DEVICE_REORDER, { udids: order });
+        // Apply locally right away; the server's `history` broadcast confirms (or restores) the order.
+        const entries = order.map((key) => history.get(key)!);
+        history.clear();
+        for (const entry of entries) {
+            history.set(entry.udid, entry);
+        }
+        return promise;
+    }
+
     function reconnectNow(): void {
         if (ws && ws.readyState === WebSocket.OPEN) {
             return;
@@ -310,6 +326,7 @@ function useDeviceTrackerImpl() {
         adbKillServer,
         setAlias,
         forgetDevice,
+        reorderDevice,
         reconnectNow,
     };
 }

@@ -75,6 +75,7 @@ export const Command = {
     ADB_KILL_SERVER: 'adb_kill_server',
     DEVICE_SET_ALIAS: 'device_set_alias',
     DEVICE_FORGET: 'device_forget',
+    DEVICE_REORDER: 'device_reorder',
 } as const;
 
 export type CommandType = (typeof Command)[keyof typeof Command];

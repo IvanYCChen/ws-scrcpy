@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import DeviceActions from '@/components/DeviceActions.vue';
 import DeviceMenu from '@/components/DeviceMenu.vue';
 import DeviceName from '@/components/DeviceName.vue';
+import DragHandle from '@/components/DragHandle.vue';
 import DeviceStateBadge from '@/components/DeviceStateBadge.vue';
 import { androidLabel, ipv4List } from '@/lib/device';
 import { isTcpUdid } from '@/lib/ws';
@@ -21,8 +22,9 @@ const tcp = computed(() => isTcpUdid(props.device.udid));
 <template>
     <Card class="gap-3 py-4">
         <CardHeader class="px-4">
-            <div class="flex items-start justify-between gap-2">
-                <DeviceName :device="device" title-class="text-base leading-tight" />
+            <div class="flex items-start gap-1">
+                <DragHandle :udid="device.udid" class="-mt-0.5 -ml-2 shrink-0" />
+                <DeviceName class="flex-1" :device="device" title-class="text-base leading-tight" />
                 <div class="-mt-1 -mr-2 flex shrink-0 items-center gap-1">
                     <DeviceStateBadge :state="device.state" />
                     <DeviceMenu :device="device" />

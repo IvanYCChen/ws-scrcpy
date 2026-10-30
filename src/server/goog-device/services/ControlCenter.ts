@@ -243,6 +243,9 @@ export class ControlCenter extends BaseControlCenter<GoogDeviceDescriptor> imple
             case ControlCenterCommand.DEVICE_FORGET:
                 this.history.remove(command.getUdid());
                 return;
+            case ControlCenterCommand.DEVICE_REORDER:
+                this.history.reorder(command.getUdids());
+                return;
             default:
                 break;
         }

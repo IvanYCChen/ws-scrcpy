@@ -62,6 +62,7 @@ export class DeviceHistory extends TypedEmitter<DeviceHistoryEvents> {
         this.emit('change', this.getList());
     }
 
+    /** The list order is the display order chosen in the admin UI; new devices are appended at the end. */
     public getList(): DeviceHistoryEntry[] {
         return Array.from(this.entries.values());
     }
@@ -125,6 +126,24 @@ export class DeviceHistory extends TypedEmitter<DeviceHistoryEvents> {
             throw new Error(`Device "${udid}" is not in the history`);
         }
         entry.alias = alias.trim().slice(0, MAX_ALIAS_LENGTH);
+        this.save();
+    }
+
+    /** Puts the given udids first, in that order; entries not listed keep their relative order after them. */
+    public reorder(udids: string[]): void {
+        const next: Map<string, DeviceHistoryEntry> = new Map();
+        for (const udid of udids) {
+            const entry = this.entries.get(udid);
+            if (entry) {
+                next.set(udid, entry);
+            }
+        }
+        this.entries.forEach((entry, udid) => {
+            if (!next.has(udid)) {
+                next.set(udid, entry);
+            }
+        });
+        this.entries = next;
         this.save();
     }
 
