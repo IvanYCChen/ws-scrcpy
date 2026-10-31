@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { EllipsisVertical, Pencil, Trash2 } from '@lucide/vue';
+import { EllipsisVertical, FolderOpen, Pencil, Trash2 } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import FileBrowserDialog from '@/components/FileBrowserDialog.vue';
 import { deviceTitle } from '@/lib/device';
 import { DeviceState, type GoogDeviceDescriptor } from '@/types/protocol';
 import { useDeviceTracker } from '@/composables/useDeviceTracker';
@@ -37,6 +38,7 @@ const online = computed(() => devices.get(props.device.udid)?.state === DeviceSt
 
 const aliasOpen = ref(false);
 const forgetOpen = ref(false);
+const filesOpen = ref(false);
 const alias = ref('');
 const pending = ref(false);
 
@@ -89,6 +91,11 @@ async function forget(): Promise<void> {
         <DropdownMenuContent align="end">
             <DropdownMenuLabel class="max-w-56 truncate">{{ name }}</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem :disabled="!online" @select="filesOpen = true">
+                <FolderOpen />
+                瀏覽檔案
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem :disabled="!entry || !isOpen" @select="aliasOpen = true">
                 <Pencil />
                 編輯別名
@@ -102,6 +109,8 @@ async function forget(): Promise<void> {
             </p>
         </DropdownMenuContent>
     </DropdownMenu>
+
+    <FileBrowserDialog v-model:open="filesOpen" :device="device" />
 
     <Dialog v-model:open="aliasOpen">
         <DialogContent class="sm:max-w-md">

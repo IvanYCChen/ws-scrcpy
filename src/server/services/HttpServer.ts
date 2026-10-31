@@ -91,6 +91,13 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
             this.mainApp.use(PATHNAME, auth.gate);
             this.mainApp.use(PATHNAME, express.static(HttpServer.PUBLIC_DIR));
 
+            /// #if INCLUDE_GOOG
+            /// #if INCLUDE_FILE_LISTING
+            const { FileApi } = await import('../goog-device/FileApi');
+            this.mainApp.use(PATHNAME, FileApi.createRouter());
+            /// #endif
+            /// #endif
+
             /// #if USE_WDA_MJPEG_SERVER
 
             const { MjpegProxyFactory } = await import('../mw/MjpegProxyFactory');

@@ -1,3 +1,4 @@
+import { Readable } from 'stream';
 import Client from '@dead50f7/adbkit/lib/adb/client';
 import { ExtendedSync } from './ExtendedSync';
 import { SyncCommand } from './command/host-transport/sync';
@@ -21,6 +22,11 @@ export class ExtendedClient extends Client {
         return sync.pipePull(path, stream).then(() => {
             sync.end();
         });
+    }
+
+    public async pullStream(serial: string, path: string): Promise<Readable> {
+        const sync = await this.pipeSyncService(serial);
+        return sync.pullStream(path);
     }
 
     public async pipeStat(serial: string, path: string, stream: Multiplexer): Promise<void> {

@@ -1,6 +1,7 @@
 import Connection from '@dead50f7/adbkit/lib/adb/connection';
 import Parser from '@dead50f7/adbkit/lib/adb/parser';
 import Protocol from '@dead50f7/adbkit/lib/adb/protocol';
+import { PassThrough, Readable } from 'stream';
 import { Multiplexer } from '../../../packages/multiplexer/Multiplexer';
 
 export class ExtendedSync {
@@ -38,6 +39,51 @@ export class ExtendedSync {
     public pipePull(path: string, stream: Multiplexer): Promise<void> {
         this._sendCommandWithArg(Protocol.RECV, `${path}`);
         return this._readData(stream);
+    }
+
+    /**
+     * Same as adbkit's `pull`, minus its `Parser.readByteFlow` bug: when a DATA block arrives split across socket reads
+     * it writes `null` into the transfer and throws. Destroying the returned stream cancels the pull.
+     */
+    public pullStream(path: string): Readable {
+        const stream = new PassThrough();
+        let closed = false;
+        stream.once('close', () => {
+            closed = true;
+            this.end();
+        });
+        const readNext = async (): Promise<void> => {
+            while (!closed) {
+                const reply = await this.parser.readAscii(4);
+                switch (reply) {
+                    case Protocol.DATA:
+                        const lengthData = await this.parser.readBytes(4);
+                        const data = await this.parser.readBytes(lengthData.readUInt32LE(0));
+                        if (!stream.write(data)) {
+                            await new Promise((resolve) => {
+                                stream.once('drain', resolve);
+                                stream.once('close', resolve);
+                            });
+                        }
+                        break;
+                    case Protocol.DONE:
+                        await this.parser.readBytes(4);
+                        stream.end();
+                        return;
+                    case Protocol.FAIL:
+                        const length = await this.parser.readBytes(4);
+                        const message = await this.parser.readAscii(length.readUInt32LE(0));
+                        throw new Error(`Failure: '${message}'`);
+                    default:
+                        await this.parser.unexpected(reply, 'DATA, DONE or FAIL');
+                }
+            }
+        };
+        this._sendCommandWithArg(Protocol.RECV, path);
+        readNext()
+            .catch((error: Error) => stream.destroy(error))
+            .finally(() => this.end());
+        return stream;
     }
 
     public async pipeStat(path: string, stream: Multiplexer): Promise<void> {
