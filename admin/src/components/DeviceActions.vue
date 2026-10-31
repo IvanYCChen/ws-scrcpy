@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { useLocalStorage } from '@vueuse/core';
-import { ChevronDown, ExternalLink, MonitorPlay, Plug, Unplug } from '@lucide/vue';
+import { Camera, ChevronDown, ExternalLink, MonitorPlay, Plug, Unplug } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -12,6 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import ScreenshotDialog from '@/components/ScreenshotDialog.vue';
 import StreamDialog from '@/components/StreamDialog.vue';
 import { buildStreamLink, isPlayerCode, splitTcpUdid } from '@/lib/ws';
 import { DeviceState, PLAYERS, type GoogDeviceDescriptor, type PlayerCode } from '@/types/protocol';
@@ -31,6 +32,7 @@ const canReconnect = computed(() => tcp.value !== null && props.device.state ===
 
 const busy = ref(false);
 const streamOpen = ref(false);
+const screenshotOpen = ref(false);
 
 function openStreamWith(code: PlayerCode): void {
     storedPlayer.value = code;
@@ -104,6 +106,11 @@ async function reconnect(): Promise<void> {
                 </DropdownMenu>
             </div>
             <StreamDialog v-model:open="streamOpen" :device="device" :player="player" />
+            <Button size="sm" variant="outline" @click="screenshotOpen = true">
+                <Camera />
+                截圖
+            </Button>
+            <ScreenshotDialog v-model:open="screenshotOpen" :device="device" />
         </template>
 
         <Button v-if="canReconnect" size="sm" variant="secondary" :disabled="!isOpen || busy" @click="reconnect">

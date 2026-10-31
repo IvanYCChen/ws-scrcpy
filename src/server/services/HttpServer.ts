@@ -92,6 +92,8 @@ export class HttpServer extends TypedEmitter<HttpServerEvents> implements Servic
             this.mainApp.use(PATHNAME, express.static(HttpServer.PUBLIC_DIR));
 
             /// #if INCLUDE_GOOG
+            const { ScreenshotApi } = await import('../goog-device/ScreenshotApi');
+            this.mainApp.use(PATHNAME, ScreenshotApi.createRouter());
             /// #if INCLUDE_FILE_LISTING
             const { FileApi } = await import('../goog-device/FileApi');
             this.mainApp.use(PATHNAME, FileApi.createRouter());
