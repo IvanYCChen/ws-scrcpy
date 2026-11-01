@@ -90,6 +90,7 @@ export const ACTION = {
     GOOG_DEVICE_LIST: 'goog-device-list',
     PROXY_ADB: 'proxy-adb',
     STREAM_SCRCPY: 'stream',
+    SHELL: 'shell',
 } as const;
 
 /** Port the scrcpy server listens on inside the device (see `src/common/Constants.ts`). */

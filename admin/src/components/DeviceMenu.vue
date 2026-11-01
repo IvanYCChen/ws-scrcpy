@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { EllipsisVertical, FolderOpen, Pencil, Trash2 } from '@lucide/vue';
+import { EllipsisVertical, FolderOpen, Pencil, SquareTerminal, Trash2 } from '@lucide/vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,6 +26,9 @@ import { deviceTitle } from '@/lib/device';
 import { DeviceState, type GoogDeviceDescriptor } from '@/types/protocol';
 import { useDeviceTracker } from '@/composables/useDeviceTracker';
 
+// xterm is large; load it only when a shell is opened.
+const ShellDialog = defineAsyncComponent(() => import('@/components/ShellDialog.vue'));
+
 const MAX_ALIAS_LENGTH = 64;
 
 const props = defineProps<{ device: GoogDeviceDescriptor }>();
@@ -39,6 +42,7 @@ const online = computed(() => devices.get(props.device.udid)?.state === DeviceSt
 const aliasOpen = ref(false);
 const forgetOpen = ref(false);
 const filesOpen = ref(false);
+const shellOpen = ref(false);
 const alias = ref('');
 const pending = ref(false);
 
@@ -95,6 +99,10 @@ async function forget(): Promise<void> {
                 <FolderOpen />
                 瀏覽檔案
             </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!online" @select="shellOpen = true">
+                <SquareTerminal />
+                ADB Shell
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem :disabled="!entry || !isOpen" @select="aliasOpen = true">
                 <Pencil />
@@ -111,6 +119,7 @@ async function forget(): Promise<void> {
     </DropdownMenu>
 
     <FileBrowserDialog v-model:open="filesOpen" :device="device" />
+    <ShellDialog v-if="shellOpen" v-model:open="shellOpen" :device="device" />
 
     <Dialog v-model:open="aliasOpen">
         <DialogContent class="sm:max-w-md">

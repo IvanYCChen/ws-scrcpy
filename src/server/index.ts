@@ -48,6 +48,8 @@ async function loadGoogModules() {
     /// #if INCLUDE_ADB_SHELL
     const { RemoteShell } = await import('./goog-device/mw/RemoteShell');
     mw2List.push(RemoteShell);
+    // Plain WebSocket (?action=shell) for the admin UI, which does not speak the multiplexer protocol.
+    mwList.push(RemoteShell);
     /// #endif
 
     /// #if INCLUDE_DEV_TOOLS

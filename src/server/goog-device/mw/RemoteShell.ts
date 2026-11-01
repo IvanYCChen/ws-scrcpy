@@ -81,6 +81,10 @@ export class RemoteShell extends Mw {
             if (!this.term) {
                 return;
             }
+            // Keystrokes arrive as text; a binary frame may carry a control message (resize) instead.
+            if (typeof event.data !== 'string' && this.handleControl(event.data as Buffer)) {
+                return;
+            }
             return this.term.write(event.data as string);
         }
         let data;
@@ -109,6 +113,23 @@ export class RemoteShell extends Mw {
             this.release();
         }
     };
+
+    private handleControl(data: Buffer | ArrayBuffer): boolean {
+        let message: Message;
+        try {
+            message = JSON.parse(Buffer.from(data as ArrayBuffer).toString());
+        } catch {
+            return false;
+        }
+        if (message?.type !== EVENT_TYPE_SHELL) {
+            return false;
+        }
+        const { type, cols, rows } = message.data as XtermClientMessage;
+        if (type === 'resize' && this.term && cols && rows && cols > 0 && rows > 0) {
+            this.term.resize(Math.floor(cols), Math.floor(rows));
+        }
+        return true;
+    }
 
     // string message buffering
     private buffer(timeout: number): (data: string) => void {

@@ -1,6 +1,7 @@
 export enum XtermServiceActions {
     start,
     stop,
+    resize,
 }
 
 export interface XtermServiceParameters {
