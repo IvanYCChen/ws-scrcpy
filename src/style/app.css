@@ -191,3 +191,63 @@ body.stream {
 .control-wrapper > input[type=checkbox]:checked + label > svg {
     fill: var(--svg-checkbox-bg-color);
 }
+
+/* On-screen arrow keys and space, drawn over the bottom of the video */
+.on-screen-keys {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.on-screen-dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(3, 52px);
+    gap: 4px;
+}
+
+.on-screen-key {
+    pointer-events: auto;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+    background-color: rgba(30, 30, 30, 0.45);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 20px;
+    padding: 0;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.on-screen-key.active {
+    background-color: rgba(255, 255, 255, 0.45);
+}
+
+.on-screen-key > svg {
+    display: block;
+    margin: auto;
+    pointer-events: none;
+}
+
+.on-screen-key-up { grid-area: 1 / 2; }
+.on-screen-key-left { grid-area: 2 / 1; }
+.on-screen-key-right { grid-area: 2 / 3; }
+.on-screen-key-down { grid-area: 3 / 2; }
+.on-screen-key-left > svg { transform: rotate(-90deg); }
+.on-screen-key-right > svg { transform: rotate(90deg); }
+.on-screen-key-down > svg { transform: rotate(180deg); }
+
+.on-screen-key-space {
+    width: 140px;
+    height: 52px;
+    font-size: 16px;
+}

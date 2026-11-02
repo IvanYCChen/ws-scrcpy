@@ -1,4 +1,5 @@
 import KeyboardSVG from '../../public/images/skin-light/ic_keyboard_678_48dp.svg';
+import GamepadSVG from '../../public/images/skin-light/ic_gamepad_678_48dp.svg';
 import MoreSVG from '../../public/images/skin-light/ic_more_horiz_678_48dp.svg';
 import CameraSVG from '../../public/images/skin-light/ic_photo_camera_678_48dp.svg';
 import PowerSVG from '../../public/images/skin-light/ic_power_settings_new_678_48px.svg';
@@ -28,6 +29,7 @@ export enum Icon {
     CAMERA,
     FULL_SCREEN,
     KEYBOARD,
+    GAMEPAD,
     CANCEL,
     OFFLINE,
     REFRESH,
@@ -46,6 +48,8 @@ export default class SvgImage {
                 return FullScreenSVG;
             case Icon.KEYBOARD:
                 return KeyboardSVG;
+            case Icon.GAMEPAD:
+                return GamepadSVG;
             case Icon.MORE:
                 return MoreSVG;
             case Icon.CAMERA:

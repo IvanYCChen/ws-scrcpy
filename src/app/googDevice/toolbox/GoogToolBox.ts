@@ -7,6 +7,7 @@ import { ToolBoxElement } from '../../toolbox/ToolBoxElement';
 import { ToolBoxCheckbox } from '../../toolbox/ToolBoxCheckbox';
 import { StreamClientScrcpy } from '../client/StreamClientScrcpy';
 import { BasePlayer } from '../../player/BasePlayer';
+import { OnScreenKeys } from '../OnScreenKeys';
 
 const BUTTONS = [
     {
@@ -45,6 +46,8 @@ export interface GoogToolBoxOptions {
     // Start with keyboard capture enabled instead of requiring the user to tick
     // the "Capture keyboard" checkbox first.
     captureKeyboard?: boolean;
+    // Arrow/space overlay, toggled by its own button
+    onScreenKeys?: OnScreenKeys;
 }
 
 export class GoogToolBox extends ToolBox {
@@ -109,6 +112,18 @@ export class GoogToolBox extends ToolBox {
             client.setHandleKeyboardEvents(true);
         }
         elements.push(keyboard);
+
+        const { onScreenKeys } = options;
+        if (onScreenKeys) {
+            const keys = new ToolBoxCheckbox('On-screen keys', SvgImage.Icon.GAMEPAD, `on_screen_keys_${udid}`);
+            keys.addEventListener('click', (_, el) => {
+                onScreenKeys.setVisible(el.getElement().checked);
+            });
+            const visible = OnScreenKeys.isTouchScreen();
+            keys.getElement().checked = visible;
+            onScreenKeys.setVisible(visible);
+            elements.push(keys);
+        }
 
         if (moreBox) {
             const displayId = player.getVideoSettings().displayId;

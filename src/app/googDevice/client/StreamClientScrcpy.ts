@@ -30,6 +30,7 @@ import { ACTION } from '../../../common/Action';
 import { StreamReceiverScrcpy } from './StreamReceiverScrcpy';
 import { ParamsDeviceTracker } from '../../../types/ParamsDeviceTracker';
 import { ScrcpyFilePushStream } from '../filePush/ScrcpyFilePushStream';
+import { OnScreenKeys } from '../OnScreenKeys';
 
 type StartParams = {
     udid: string;
@@ -58,6 +59,7 @@ export class StreamClientScrcpy
     private moreBox?: GoogMoreBox;
     private player?: BasePlayer;
     private filePushHandler?: FilePushHandler;
+    private onScreenKeys?: OnScreenKeys;
     private fitToScreen?: boolean;
     private readonly streamReceiver: StreamReceiverScrcpy;
 
@@ -268,6 +270,8 @@ export class StreamClientScrcpy
         this.touchHandler?.release();
         this.touchHandler = undefined;
         KeyInputHandler.removeEventListener(this);
+        this.onScreenKeys?.release();
+        this.onScreenKeys = undefined;
         window.removeEventListener('resize', this.onWindowResize);
         if (this.resizeTimeoutId !== undefined) {
             clearTimeout(this.resizeTimeoutId);
@@ -330,8 +334,10 @@ export class StreamClientScrcpy
         const googMoreBox = (this.moreBox = new GoogMoreBox(udid, player, this));
         const moreBox = googMoreBox.getHolderElement();
         googMoreBox.setOnStop(stop);
+        const onScreenKeys = (this.onScreenKeys = new OnScreenKeys(this));
         const googToolBox = GoogToolBox.createToolBox(udid, player, this, moreBox, {
             captureKeyboard: this.params.captureKeyboard,
+            onScreenKeys,
         });
         this.controlButtons = googToolBox.getHolderElement();
         deviceView.appendChild(this.controlButtons);
@@ -340,6 +346,7 @@ export class StreamClientScrcpy
         deviceView.appendChild(video);
         deviceView.appendChild(moreBox);
         player.setParent(video);
+        video.appendChild(onScreenKeys.getElement());
         player.pause();
 
         document.body.appendChild(deviceView);
