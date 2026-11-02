@@ -1,18 +1,46 @@
 import { KeyCodeControlMessage } from '../controlMessage/KeyCodeControlMessage';
 import KeyEvent from './android/KeyEvent';
 import { KeyToCodeMap } from './KeyToCodeMap';
+import UIEventsCode from '../UIEventsCode';
 
 export interface KeyEventListener {
     onKeyEvent: (event: KeyCodeControlMessage) => void;
 }
 
+// Keys forwarded to the device even when "Capture keyboard" is off
+export const ARROW_KEYS: ReadonlySet<string> = new Set([
+    UIEventsCode.ArrowUp,
+    UIEventsCode.ArrowDown,
+    UIEventsCode.ArrowLeft,
+    UIEventsCode.ArrowRight,
+]);
+
 export class KeyInputHandler {
     private static readonly repeatCounter: Map<number, number> = new Map();
-    private static readonly listeners: Set<KeyEventListener> = new Set();
+    // listener -> allowed `KeyboardEvent.code` values (undefined = all mapped keys)
+    private static readonly listeners: Map<KeyEventListener, ReadonlySet<string> | undefined> = new Map();
+    private static isEditable(target: EventTarget | null): boolean {
+        if (!(target instanceof HTMLElement)) {
+            return false;
+        }
+        return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+    }
     private static handler = (event: Event): void => {
         const keyboardEvent = event as KeyboardEvent;
         const keyCode = KeyToCodeMap.get(keyboardEvent.code);
         if (!keyCode) {
+            return;
+        }
+        const editable = KeyInputHandler.isEditable(keyboardEvent.target);
+        const receivers: KeyEventListener[] = [];
+        KeyInputHandler.listeners.forEach((filter, listener) => {
+            // filtered listeners leave keys typed into form fields alone
+            if (filter && (editable || !filter.has(keyboardEvent.code))) {
+                return;
+            }
+            receivers.push(listener);
+        });
+        if (!receivers.length) {
             return;
         }
         let action: typeof KeyEvent.ACTION_DOWN | typeof KeyEvent.ACTION_DOWN;
@@ -50,7 +78,7 @@ export class KeyInputHandler {
             repeatCount,
             metaState,
         );
-        KeyInputHandler.listeners.forEach((listener) => {
+        receivers.forEach((listener) => {
             listener.onKeyEvent(controlMessage);
         });
         event.preventDefault();
@@ -63,14 +91,16 @@ export class KeyInputHandler {
         document.body.removeEventListener('keydown', this.handler);
         document.body.removeEventListener('keyup', this.handler);
     }
-    public static addEventListener(listener: KeyEventListener): void {
+    public static addEventListener(listener: KeyEventListener, onlyCodes?: ReadonlySet<string>): void {
         if (!this.listeners.size) {
             this.attachListeners();
         }
-        this.listeners.add(listener);
+        this.listeners.set(listener, onlyCodes);
     }
     public static removeEventListener(listener: KeyEventListener): void {
-        this.listeners.delete(listener);
+        if (!this.listeners.delete(listener)) {
+            return;
+        }
         if (!this.listeners.size) {
             this.detachListeners();
         }

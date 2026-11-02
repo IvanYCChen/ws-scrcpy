@@ -10,7 +10,7 @@ import { CommandControlMessage } from '../../controlMessage/CommandControlMessag
 import Util from '../../Util';
 import FilePushHandler from '../filePush/FilePushHandler';
 import DragAndPushLogger from '../DragAndPushLogger';
-import { KeyEventListener, KeyInputHandler } from '../KeyInputHandler';
+import { ARROW_KEYS, KeyEventListener, KeyInputHandler } from '../KeyInputHandler';
 import { KeyCodeControlMessage } from '../../controlMessage/KeyCodeControlMessage';
 import { BasePlayer, PlayerClass } from '../../player/BasePlayer';
 import GoogDeviceDescriptor from '../../../types/GoogDeviceDescriptor';
@@ -267,6 +267,7 @@ export class StreamClientScrcpy
         this.filePushHandler = undefined;
         this.touchHandler?.release();
         this.touchHandler = undefined;
+        KeyInputHandler.removeEventListener(this);
         window.removeEventListener('resize', this.onWindowResize);
         if (this.resizeTimeoutId !== undefined) {
             clearTimeout(this.resizeTimeoutId);
@@ -299,6 +300,7 @@ export class StreamClientScrcpy
         }
         this.player = player;
         this.setTouchListeners(player);
+        this.setHandleKeyboardEvents(false);
 
         if (!videoSettings) {
             videoSettings = player.getVideoSettings();
@@ -404,11 +406,8 @@ export class StreamClientScrcpy
     }
 
     public setHandleKeyboardEvents(enabled: boolean): void {
-        if (enabled) {
-            KeyInputHandler.addEventListener(this);
-        } else {
-            KeyInputHandler.removeEventListener(this);
-        }
+        // Arrow keys always reach the device; "Capture keyboard" extends it to every key
+        KeyInputHandler.addEventListener(this, enabled ? undefined : ARROW_KEYS);
     }
 
     public onKeyEvent(event: KeyCodeControlMessage): void {
